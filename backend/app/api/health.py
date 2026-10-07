@@ -1,4 +1,5 @@
-from fastapi import APIRouter, httpException
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import text
 from app.core.redis import redis_client
 from app.db.session import asyncSessionLocal
 
@@ -12,7 +13,7 @@ async def health():
 async def readiness():
     try:
         async with asyncSessionLocal() as session:
-            await session.execute("SELECT 1")
+            await session.execute(text("SELECT 1"))
 
         await redis_client.ping()
 
@@ -23,4 +24,4 @@ async def readiness():
             }
         
     except Exception as e:
-        raise httpException(status_code=503, detail="Service dependencies are not ready") from e
+        raise HTTPException(status_code=503, detail="Service dependencies are not ready") from e

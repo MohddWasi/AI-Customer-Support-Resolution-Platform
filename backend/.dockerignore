@@ -1,0 +1,23 @@
+# Local environment and secrets (compose passes env vars at runtime)
+.venv/
+.env
+.env.*
+
+# Python caches and tool output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Not needed inside the image
+tests/
+Dockerfile
+.dockerignore
+docker-compose.yml
+README.md
+.git/
+.vscode/
+.idea/

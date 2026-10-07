@@ -1,0 +1,35 @@
+services:
+
+  api:
+    build: .
+    image: backend-api
+    container_name: customer-support-backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+  
+  
+  postgres:
+    image: postgres:15
+    container_name: customer-support-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=customer_support
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+   image: redis:7
+   container_name: customer-support-redis
+   ports:
+     - "6379:6379"
+
+volumes:
+  postgres_data:
