@@ -2,8 +2,8 @@ services:
 
   api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: backend-api
     container_name: customer-support-backend
     env_file:
@@ -46,8 +46,8 @@ services:
 
   worker:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: backend-api
     container_name: customer-support-worker
     env_file:
