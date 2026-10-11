@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from backend.app.core.config import settings
-from backend.app.core.redis import redis_client
+from app.core.config import settings
+from app.core.redis import redis_client
 
 
 logging.basicConfig(

@@ -52,7 +52,7 @@ services:
     container_name: customer-support-worker
     env_file:
       - ./backend/.env
-    command: ["python", "-m", "worker.main"]
+    command: ["uv", "run", "python", "-m", "worker.main"]
     depends_on:
       redis:
         condition: service_healthy
@@ -65,6 +65,8 @@ services:
       dockerfile: Dockerfile
     image: customer-support-frontend
     container_name: customer-support-frontend
+    environment:
+      VITE_API_BASE_URL: "http://localhost:8000"
     ports:
       - "5173:5173"
     depends_on:
