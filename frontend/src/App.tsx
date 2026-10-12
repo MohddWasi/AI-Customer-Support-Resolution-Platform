@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import {useQuery} from '@tanstack/react-query'
 
 type HealthStatus = {
   status: string
@@ -7,22 +7,22 @@ type HealthStatus = {
   redis?: string
 }
 
+async function fetchHealth() : Promise<HealthStatus> {
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/health/ready`);
+
+  if(!response.ok) {
+    throw new Error('Backend is not ready');
+  }
+
+  return response.json();
+}
 function App() {
-  const [health, setHealth] = useState<HealthStatus | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/health/ready`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Backend is not ready')
-        return response.json()
-      })
-      .then(setHealth)
-      .catch((err: Error) => setError(err.message))
-  }, [])
-
-
-  
+  const {data:health, isPending, error} = useQuery({
+    queryKey: ['system-health'],
+    queryFn: fetchHealth,
+    retry: 1,
+    refetchInterval: 30_000,
+  })
 
   return (
     <main className="min-h-screen bg-gray-100 p-8 text-gray-900">
@@ -33,8 +33,8 @@ function App() {
       <section className="rounded-lg bg-white p-6 shadow">
         <h2 className="mb-4 text-xl font-semibold">System Health</h2>
 
-        {error && <p className="text-red-600">Error: {error}</p>}
-        {!health && !error && <p>Checking services...</p>}
+        {isPending && <p>Checking services...</p>}
+        {error && <p className="text-red-600">Error: {error.message}</p>}
 
         {health && (
           <div className="space-y-2">
