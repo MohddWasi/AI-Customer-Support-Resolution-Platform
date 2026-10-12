@@ -1,4 +1,5 @@
 import asyncio
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import pool
@@ -8,6 +9,10 @@ from app.core.config import settings
 
 
 config = context.config
+
+# Load logging config from alembic.ini so migrations print progress
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
 
 config.set_main_option(
     "sqlalchemy.url",
