@@ -8,6 +8,10 @@ services:
     container_name: customer-support-backend
     env_file:
       - ./backend/.env
+    # Inside Docker, reach Postgres/Redis by service name (backend/.env uses localhost)
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/customer_support
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:
@@ -52,7 +56,10 @@ services:
     container_name: customer-support-worker
     env_file:
       - ./backend/.env
-    command: ["uv", "run", "python", "-m", "worker.main"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/customer_support
+      REDIS_URL: redis://redis:6379/0
+    command: ["python", "-m", "worker.main"]
     depends_on:
       redis:
         condition: service_healthy
