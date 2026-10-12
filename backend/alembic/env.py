@@ -6,7 +6,8 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
-
+import app.models  # noqa: F401 - registers all models on Base.metadata
+from app.db.base import Base
 
 config = context.config
 
@@ -19,7 +20,7 @@ config.set_main_option(
     settings.DATABASE_URL.replace("%", "%%"),
 )
 
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
