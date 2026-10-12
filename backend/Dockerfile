@@ -11,6 +11,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY backend/app ./app
 
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini ./alembic.ini
+
 COPY worker ./worker
 
 EXPOSE 8000

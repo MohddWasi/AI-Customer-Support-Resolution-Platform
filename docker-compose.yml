@@ -15,9 +15,22 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
+        condition: service_healthy
+
+  # One-off: applies Alembic migrations, then exits. api/worker wait for it.
+  migrate:
+    image: backend-api
+    container_name: customer-support-migrate
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/customer_support
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
         condition: service_healthy
 
   postgres:
@@ -61,9 +74,9 @@ services:
       REDIS_URL: redis://redis:6379/0
     command: ["python", "-m", "worker.main"]
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       redis:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
 
   frontend:

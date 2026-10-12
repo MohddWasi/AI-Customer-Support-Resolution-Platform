@@ -4,6 +4,8 @@
 !backend/pyproject.toml
 !backend/uv.lock
 !backend/app/
+!backend/alembic/
+!backend/alembic.ini
 !worker/
 **/__pycache__/
 **/*.py[cod]
