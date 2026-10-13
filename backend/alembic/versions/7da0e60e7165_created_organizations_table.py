@@ -26,8 +26,8 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=150), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('name')
+    sa.PrimaryKeyConstraint("id", name="pk_organizations"),
+    sa.UniqueConstraint("name", name="uq_organizations_name")
     )
     # ### end Alembic commands ###
 
