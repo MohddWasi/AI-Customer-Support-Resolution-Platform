@@ -14,5 +14,6 @@ from app.models.tool_call import ToolCall
 from app.models.citation import Citation
 from app.models.audit_log import AuditLog
 from app.models.human_review import HumanReview
+from app.models.evaluation_run import EvaluationRun
 
-__all__ = ["Organization", "User", "OrganizationMember", "Ticket", "TicketMessage", "TicketEvent", "KnowledgeSource", "Document", "DocumentChunk", "AiRun", "AiRunStep", "RetrievalResult", "ToolCall", "Citation", "AuditLog", "HumanReview"]
+__all__ = ["Organization", "User", "OrganizationMember", "Ticket", "TicketMessage", "TicketEvent", "KnowledgeSource", "Document", "DocumentChunk", "AiRun", "AiRunStep", "RetrievalResult", "ToolCall", "Citation", "AuditLog", "HumanReview", "EvaluationRun"]
