@@ -8,5 +8,6 @@ from app.models.knowledge_source import KnowledgeSource
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.ai_run import AiRun
+from app.models.ai_run_step import AiRunStep
 
-__all__ = ["Organization", "User", "OrganizationMember", "Ticket", "TicketMessage", "TicketEvent", "KnowledgeSource", "Document", "DocumentChunk", "AiRun"]
+__all__ = ["Organization", "User", "OrganizationMember", "Ticket", "TicketMessage", "TicketEvent", "KnowledgeSource", "Document", "DocumentChunk", "AiRun", "AiRunStep"]
