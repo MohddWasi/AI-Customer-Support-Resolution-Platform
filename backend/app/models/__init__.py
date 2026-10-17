@@ -7,5 +7,6 @@ from app.models.ticket_event import TicketEvent
 from app.models.knowledge_source import KnowledgeSource
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
+from app.models.ai_run import AiRun
 
-__all__ = ["Organization", "User", "OrganizationMember", "Ticket", "TicketMessage", "TicketEvent", "KnowledgeSource", "Document", "DocumentChunk"]
+__all__ = ["Organization", "User", "OrganizationMember", "Ticket", "TicketMessage", "TicketEvent", "KnowledgeSource", "Document", "DocumentChunk", "AiRun"]
