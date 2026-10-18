@@ -1,4 +1,3 @@
-import http
 import logging
 from fastapi import Depends, HTTPException, status, APIRouter
 from sqlalchemy import Select
@@ -18,7 +17,7 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
 
     existing_user = await db.scalar(
         Select(User).where(User.email == data.email)
-        );
+        )
     
     if existing_user:
         raise HTTPException(
