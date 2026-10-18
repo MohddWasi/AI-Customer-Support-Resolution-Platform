@@ -1,7 +1,6 @@
 import http
-
+import logging
 from fastapi import Depends, HTTPException, status, APIRouter
-from httpx import get
 from sqlalchemy import Select
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +10,7 @@ from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, UserResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register",response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -33,6 +33,16 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
             hashed_password = data.password
         )
 
+        existing_org = await db.scalar(
+            Select(Organization).where(
+                Organization.name == data.organization_name
+                )
+        )
+        if existing_org:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Organization already exists. Ask an administrator for an invitation."
+            )
         org = Organization(
             name = data.organization_name
         )
@@ -43,7 +53,7 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
         membership  = OrganizationMember(
             user_id = user.id,
             organization_id = org.id,
-            organization_role = OrganizationRole.admin
+            role = OrganizationRole.CUSTOMER
         )
 
         db.add(membership)
@@ -58,6 +68,7 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
     
     except Exception as e:
         await db.rollback()
+        logger.exception("Error during registration: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred during registration."
