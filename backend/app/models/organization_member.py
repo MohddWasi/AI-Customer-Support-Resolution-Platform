@@ -18,7 +18,7 @@ class OrganizationMember(Base, TimestampMixin):
         UniqueConstraint("organization_id", "user_id", name="uq_organization_members_organization_user"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid7)
     organization_id: Mapped[uuid.UUID] = mapped_column(Uuid,ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     role: Mapped[OrganizationRole] = mapped_column(Enum(OrganizationRole, 

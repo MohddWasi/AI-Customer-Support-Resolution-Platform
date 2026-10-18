@@ -42,7 +42,7 @@ class AuditLog(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid.uuid7,
     )
 
     # Empty for platform-level actions (e.g. registration) or after the organization is deleted
