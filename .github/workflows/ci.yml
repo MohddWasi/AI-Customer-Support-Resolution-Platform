@@ -33,6 +33,8 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/customer_support
       REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET_KEY: ci-test-only-secret-key-not-for-production-0123456789
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 20
       ENVIRONMENT: test
 
     steps:
