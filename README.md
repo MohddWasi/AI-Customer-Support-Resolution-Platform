@@ -116,6 +116,20 @@ uv run alembic upgrade head
 
 With Docker, migrations run automatically on `docker compose up` (the `migrate` service).
 
+## Demo data
+
+Seeds two organizations (Acme Software, Globex Engineering) with an admin, a support agent and two customers each, sample tickets with messages and events, and knowledge-source document metadata. Safe to run repeatedly.
+
+```bash
+# from backend/
+uv run python -m app.db.seed
+
+# or with Docker
+docker compose run --rm api python -m app.db.seed
+```
+
+Seeded users have no usable password until authentication is implemented.
+
 ## Checks and CI
 
 ```bash
