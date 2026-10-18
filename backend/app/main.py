@@ -7,6 +7,7 @@ from app.core.config import settings
 from contextlib import asynccontextmanager
 from app.db.session import engine
 from app.core.redis import redis_client
+from app.api.auth import router as auth_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,3 +32,4 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(auth_router)

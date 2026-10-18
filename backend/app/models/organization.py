@@ -7,5 +7,5 @@ from app.db.base import Base, TimestampMixin
 class Organization(Base, TimestampMixin):
     __tablename__ = "organizations"
 
-    id:Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    id:Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid7)
     name:Mapped[str] = mapped_column(String(150), nullable=False, unique=True)

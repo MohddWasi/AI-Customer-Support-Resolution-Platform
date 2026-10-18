@@ -26,7 +26,7 @@ class RetrievalResult(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid.uuid7,
     )
 
     organization_id: Mapped[uuid.UUID] = mapped_column(
