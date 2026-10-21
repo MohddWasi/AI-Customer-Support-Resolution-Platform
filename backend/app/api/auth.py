@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, UserResponse
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.core.security import verify_password, create_access_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -73,4 +74,27 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
             detail="An error occurred during registration."
         ) from e
 
+@router.post("/login", response_model=TokenResponse)
+async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
+
+    user = await db.scalar(
+        Select(User).where(User.email == data.email)
+    )
+
+    if not user or not verify_password(data.password, user.hashed_password): 
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
+    
+    access_token = create_access_token(user.id)
+
+    return TokenResponse(access_token=access_token)
     
