@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 
 
@@ -16,7 +18,7 @@ class RegisterRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     email: EmailStr
     full_name: str
 

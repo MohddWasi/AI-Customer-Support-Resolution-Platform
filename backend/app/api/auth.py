@@ -10,9 +10,16 @@ from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.core.security import hash_password, verify_password, create_access_token
+from app.api.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    return current_user
 
 @router.post("/register",response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> UserResponse:
