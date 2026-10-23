@@ -1,6 +1,7 @@
 import logging
 from fastapi import Depends, HTTPException, status, APIRouter
 from sqlalchemy import Select
+from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,10 +51,11 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
         db.add_all([user,org])
         await db.flush()
 
+        # The user who creates an organization administers it
         membership  = OrganizationMember(
             user_id = user.id,
             organization_id = org.id,
-            role = OrganizationRole.CUSTOMER
+            role = OrganizationRole.ADMIN
         )
 
         db.add(membership)
@@ -65,7 +67,18 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
             email=user.email,
             full_name=user.full_name
         )
-    
+
+    except HTTPException:
+        raise
+
+    except IntegrityError as e:
+        # A parallel request registered the same email or organization between our checks and the insert
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email or organization is already registered."
+        ) from e
+
     except Exception as e:
         await db.rollback()
         logger.exception("Error during registration: %s", str(e))

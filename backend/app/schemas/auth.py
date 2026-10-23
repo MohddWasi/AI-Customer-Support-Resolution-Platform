@@ -1,4 +1,9 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
+
+
+def normalize_email(value: str) -> str:
+    """Emails are case-insensitive: store and compare them lowercased."""
+    return value.strip().lower()
 
 
 class RegisterRequest(BaseModel):
@@ -6,6 +11,8 @@ class RegisterRequest(BaseModel):
     full_name: str = Field(min_length=2, max_length=150)
     password: str = Field(min_length=8, max_length=128)
     organization_name: str = Field(min_length=2, max_length=150)
+
+    _normalize_email = field_validator("email")(normalize_email)
 
 
 class UserResponse(BaseModel):
@@ -22,4 +29,7 @@ class TokenResponse(BaseModel):
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str 
+    # max_length: hashing a huge password is slow, so cap it like registration does
+    password: str = Field(max_length=128)
+
+    _normalize_email = field_validator("email")(normalize_email)
