@@ -1,7 +1,8 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import Select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user, require_roles
@@ -9,7 +10,7 @@ from app.db.session import get_db
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.user import User
-from app.schemas.organization import MemberResponse, OrganizationResponse
+from app.schemas.organization import AddMemberRequest, MemberResponse, OrganizationResponse
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])
 
@@ -46,3 +47,38 @@ async def list_members(
         MemberResponse(user_id=user_id, email=email, full_name=full_name, role=role, joined_at=joined_at)
         for user_id, email, full_name, role, joined_at in rows
     ]
+
+
+@router.post("/{organization_id}/members", response_model=MemberResponse, status_code=status.HTTP_201_CREATED)
+async def add_member(
+    organization_id: uuid.UUID,
+    data: AddMemberRequest,
+    _: OrganizationMember = Depends(require_roles(OrganizationRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+) -> MemberResponse:
+    """Add an existing account to the organization with a role (admins only)."""
+    user = await db.scalar(Select(User).where(User.email == data.email))
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account with this email. The user must register first.",
+        )
+
+    membership = OrganizationMember(organization_id=organization_id, user_id=user.id, role=data.role)
+    db.add(membership)
+    try:
+        await db.commit()
+    except IntegrityError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already a member of this organization.",
+        ) from e
+
+    return MemberResponse(
+        user_id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=membership.role,
+        joined_at=membership.created_at,
+    )
