@@ -16,6 +16,14 @@ from app.services.ticket_access import visible_tickets
 router = APIRouter(prefix="/organizations/{organization_id}/tickets", tags=["Tickets"])
 
 
+async def get_visible_ticket_or_404(db: AsyncSession, membership: OrganizationMember, ticket_id: uuid.UUID) -> Ticket:
+    # 404 (not 403) for tickets the member can't see, so their existence isn't revealed
+    ticket = await db.scalar(visible_tickets(membership).where(Ticket.id == ticket_id))
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    return ticket
+
+
 @router.post("", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
 async def create_ticket(
     organization_id: uuid.UUID,
@@ -95,3 +103,14 @@ async def list_tickets(
         query = query.where(Ticket.status == status_filter)
     query = query.order_by(Ticket.created_at.desc(), Ticket.id.desc()).limit(limit).offset(offset)
     return list((await db.scalars(query)).all())
+
+
+@router.get("/{ticket_id}", response_model=TicketResponse)
+async def get_ticket(
+    organization_id: uuid.UUID,
+    ticket_id: uuid.UUID,
+    membership: OrganizationMember = Depends(get_organization_member),
+    db: AsyncSession = Depends(get_db),
+) -> Ticket:
+    """A single ticket, if the current member may see it."""
+    return await get_visible_ticket_or_404(db, membership, ticket_id)
