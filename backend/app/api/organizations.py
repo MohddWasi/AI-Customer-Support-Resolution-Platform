@@ -1,13 +1,15 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_roles
 from app.db.session import get_db
 from app.models.organization import Organization
-from app.models.organization_member import OrganizationMember
+from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.user import User
-from app.schemas.organization import OrganizationResponse
+from app.schemas.organization import MemberResponse, OrganizationResponse
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])
 
@@ -25,3 +27,22 @@ async def list_my_organizations(
         .order_by(Organization.name)
     )
     return [OrganizationResponse(id=org_id, name=name, role=role) for org_id, name, role in rows]
+
+
+@router.get("/{organization_id}/members", response_model=list[MemberResponse])
+async def list_members(
+    organization_id: uuid.UUID,
+    _: OrganizationMember = Depends(require_roles(OrganizationRole.ADMIN, OrganizationRole.SUPPORT_AGENT)),
+    db: AsyncSession = Depends(get_db),
+) -> list[MemberResponse]:
+    """Members of an organization (admins and support agents only)."""
+    rows = await db.execute(
+        Select(User.id, User.email, User.full_name, OrganizationMember.role, OrganizationMember.created_at)
+        .join(OrganizationMember, OrganizationMember.user_id == User.id)
+        .where(OrganizationMember.organization_id == organization_id)
+        .order_by(User.full_name)
+    )
+    return [
+        MemberResponse(user_id=user_id, email=email, full_name=full_name, role=role, joined_at=joined_at)
+        for user_id, email, full_name, role, joined_at in rows
+    ]
