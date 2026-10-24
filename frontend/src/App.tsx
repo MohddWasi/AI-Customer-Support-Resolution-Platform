@@ -4,6 +4,8 @@ import { Route, Routes } from 'react-router-dom'
 import Tickets from './pages/Tickets'
 import Dashboard from './pages/Dashboard'
 import TicketDetails from './pages/TicketDetails'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 type HealthStatus = {
   status: string
@@ -38,6 +40,8 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/tickets" element={<Tickets />} />
         <Route path="/tickets/:ticketId" element={<TicketDetails />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
 
       <section className="rounded-lg bg-white p-6 shadow">
