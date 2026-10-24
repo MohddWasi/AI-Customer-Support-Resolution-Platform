@@ -41,31 +41,35 @@ async def register(data:RegisterRequest, db: AsyncSession = Depends(get_db)) -> 
             hashed_password = hash_password(data.password)
         )
 
-        existing_org = await db.scalar(
-            Select(Organization).where(
-                Organization.name == data.organization_name
-                )
-        )
-        if existing_org:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Organization already exists. Ask an administrator for an invitation."
+        db.add(user)
+
+        if data.organization_name is not None:
+            existing_org = await db.scalar(
+                Select(Organization).where(
+                    Organization.name == data.organization_name
+                    )
             )
-        org = Organization(
-            name = data.organization_name
-        )
+            if existing_org:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Organization already exists. Ask an administrator for an invitation."
+                )
+            org = Organization(
+                name = data.organization_name
+            )
 
-        db.add_all([user,org])
-        await db.flush()
+            db.add(org)
+            await db.flush()
 
-        # The user who creates an organization administers it
-        membership  = OrganizationMember(
-            user_id = user.id,
-            organization_id = org.id,
-            role = OrganizationRole.ADMIN
-        )
+            # The user who creates an organization administers it
+            membership  = OrganizationMember(
+                user_id = user.id,
+                organization_id = org.id,
+                role = OrganizationRole.ADMIN
+            )
 
-        db.add(membership)
+            db.add(membership)
+
         await db.commit()
         await db.refresh(user)
 
