@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import Select
+from sqlalchemy import Select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.api.dependencies import get_current_user, require_roles
 from app.db.session import get_db
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember, OrganizationRole
+from app.models.ticket import Ticket
 from app.models.user import User
 from app.schemas.organization import AddMemberRequest, MemberResponse, OrganizationResponse, UpdateMemberRoleRequest
 
@@ -140,3 +141,24 @@ async def update_member_role(
         role=membership.role,
         joined_at=membership.created_at,
     )
+
+
+@router.delete("/{organization_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_member(
+    organization_id: uuid.UUID,
+    user_id: uuid.UUID,
+    _: OrganizationMember = Depends(require_roles(OrganizationRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Remove a member from the organization (admins only). The user's account is kept."""
+    membership = await get_membership_or_404(db, organization_id, user_id)
+    await ensure_another_admin_remains(db, membership)
+
+    # Their tickets in this organization go back to the unassigned queue
+    await db.execute(
+        update(Ticket)
+        .where(Ticket.organization_id == organization_id, Ticket.assigned_to_user_id == user_id)
+        .values(assigned_to_user_id=None)
+    )
+    await db.delete(membership)
+    await db.commit()
