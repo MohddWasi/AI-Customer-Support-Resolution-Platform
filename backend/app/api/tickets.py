@@ -1,16 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_organization_member
 from app.db.session import get_db
 from app.models.organization_member import OrganizationMember, OrganizationRole
-from app.models.ticket import Ticket
+from app.models.ticket import Ticket, TicketStatus
 from app.models.ticket_event import EventActorType, TicketEvent, TicketEventType
 from app.models.ticket_message import MessageSenderType, TicketMessage
 from app.schemas.ticket import TicketCreateRequest, TicketResponse
+from app.services.ticket_access import visible_tickets
 
 router = APIRouter(prefix="/organizations/{organization_id}/tickets", tags=["Tickets"])
 
@@ -77,3 +78,20 @@ async def create_ticket(
     await db.commit()
     await db.refresh(ticket)
     return ticket
+
+
+@router.get("", response_model=list[TicketResponse])
+async def list_tickets(
+    organization_id: uuid.UUID,
+    status_filter: TicketStatus | None = Query(default=None, alias="status"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    membership: OrganizationMember = Depends(get_organization_member),
+    db: AsyncSession = Depends(get_db),
+) -> list[Ticket]:
+    """Tickets visible to the current member, newest first."""
+    query = visible_tickets(membership)
+    if status_filter is not None:
+        query = query.where(Ticket.status == status_filter)
+    query = query.order_by(Ticket.created_at.desc(), Ticket.id.desc()).limit(limit).offset(offset)
+    return list((await db.scalars(query)).all())
