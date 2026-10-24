@@ -26,3 +26,7 @@ class AddMemberRequest(BaseModel):
     role: OrganizationRole
 
     _normalize_email = field_validator("email")(normalize_email)
+
+
+class UpdateMemberRoleRequest(BaseModel):
+    role: OrganizationRole

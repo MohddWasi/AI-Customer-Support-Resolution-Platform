@@ -10,9 +10,41 @@ from app.db.session import get_db
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.user import User
-from app.schemas.organization import AddMemberRequest, MemberResponse, OrganizationResponse
+from app.schemas.organization import AddMemberRequest, MemberResponse, OrganizationResponse, UpdateMemberRoleRequest
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])
+
+
+async def get_membership_or_404(db: AsyncSession, organization_id: uuid.UUID, user_id: uuid.UUID) -> OrganizationMember:
+    membership = await db.scalar(
+        Select(OrganizationMember).where(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.user_id == user_id,
+        )
+    )
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found.")
+    return membership
+
+
+async def ensure_another_admin_remains(db: AsyncSession, membership: OrganizationMember) -> None:
+    """Refuse to demote or remove the organization's last admin."""
+    if membership.role != OrganizationRole.ADMIN:
+        return
+    # Lock the admin rows so two concurrent requests can't both remove "the other" admin
+    admin_ids = (await db.scalars(
+        Select(OrganizationMember.id)
+        .where(
+            OrganizationMember.organization_id == membership.organization_id,
+            OrganizationMember.role == OrganizationRole.ADMIN,
+        )
+        .with_for_update()
+    )).all()
+    if len(admin_ids) <= 1:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An organization must keep at least one admin.",
+        )
 
 
 @router.get("", response_model=list[OrganizationResponse])
@@ -75,6 +107,32 @@ async def add_member(
             detail="User is already a member of this organization.",
         ) from e
 
+    return MemberResponse(
+        user_id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=membership.role,
+        joined_at=membership.created_at,
+    )
+
+
+@router.patch("/{organization_id}/members/{user_id}", response_model=MemberResponse)
+async def update_member_role(
+    organization_id: uuid.UUID,
+    user_id: uuid.UUID,
+    data: UpdateMemberRoleRequest,
+    _: OrganizationMember = Depends(require_roles(OrganizationRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+) -> MemberResponse:
+    """Change a member's role (admins only)."""
+    membership = await get_membership_or_404(db, organization_id, user_id)
+    if data.role != membership.role:
+        if data.role != OrganizationRole.ADMIN:
+            await ensure_another_admin_remains(db, membership)
+        membership.role = data.role
+        await db.commit()
+
+    user = await db.get(User, user_id)
     return MemberResponse(
         user_id=user.id,
         email=user.email,
