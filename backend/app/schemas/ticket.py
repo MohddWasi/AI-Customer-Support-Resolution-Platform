@@ -30,3 +30,8 @@ class TicketResponse(BaseModel):
     closed_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TicketAssignRequest(BaseModel):
+    # null unassigns the ticket (back to the queue)
+    assignee_user_id: uuid.UUID | None

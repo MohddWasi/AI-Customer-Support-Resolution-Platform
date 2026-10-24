@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_organization_member
+from app.api.dependencies import get_organization_member, require_roles
 from app.db.session import get_db
 from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.models.ticket import Ticket, TicketStatus
 from app.models.ticket_event import EventActorType, TicketEvent, TicketEventType
 from app.models.ticket_message import MessageSenderType, TicketMessage
-from app.schemas.ticket import TicketCreateRequest, TicketResponse
+from app.schemas.ticket import TicketAssignRequest, TicketCreateRequest, TicketResponse
 from app.services.ticket_access import visible_tickets
 
 router = APIRouter(prefix="/organizations/{organization_id}/tickets", tags=["Tickets"])
@@ -114,3 +114,54 @@ async def get_ticket(
 ) -> Ticket:
     """A single ticket, if the current member may see it."""
     return await get_visible_ticket_or_404(db, membership, ticket_id)
+
+
+@router.put("/{ticket_id}/assignee", response_model=TicketResponse)
+async def assign_ticket(
+    organization_id: uuid.UUID,
+    ticket_id: uuid.UUID,
+    data: TicketAssignRequest,
+    membership: OrganizationMember = Depends(require_roles(OrganizationRole.ADMIN, OrganizationRole.SUPPORT_AGENT)),
+    db: AsyncSession = Depends(get_db),
+) -> Ticket:
+    """Assign or unassign a ticket. Admins assign anyone on the support team;
+    support agents can only claim a ticket for themselves or release their own."""
+    ticket = await get_visible_ticket_or_404(db, membership, ticket_id)
+    assignee_id = data.assignee_user_id
+
+    if membership.role == OrganizationRole.SUPPORT_AGENT and assignee_id not in (None, membership.user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Support agents can only assign tickets to themselves.",
+        )
+
+    if assignee_id is not None:
+        assignee_role = await db.scalar(
+            Select(OrganizationMember.role).where(
+                OrganizationMember.organization_id == organization_id,
+                OrganizationMember.user_id == assignee_id,
+            )
+        )
+        if assignee_role not in (OrganizationRole.SUPPORT_AGENT, OrganizationRole.ADMIN):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Tickets can only be assigned to support agents or admins of this organization.",
+            )
+
+    if ticket.assigned_to_user_id != assignee_id:
+        db.add(TicketEvent(
+            organization_id=organization_id,
+            ticket_id=ticket.id,
+            event_type=TicketEventType.ASSIGNED,
+            actor_type=EventActorType.SUPPORT_AGENT,
+            actor_user_id=membership.user_id,
+            details={
+                "from": str(ticket.assigned_to_user_id) if ticket.assigned_to_user_id else None,
+                "to": str(assignee_id) if assignee_id else None,
+            },
+        ))
+        ticket.assigned_to_user_id = assignee_id
+        await db.commit()
+        await db.refresh(ticket)
+
+    return ticket
