@@ -153,7 +153,8 @@ async def assign_ticket(
             organization_id=organization_id,
             ticket_id=ticket.id,
             event_type=TicketEventType.ASSIGNED,
-            actor_type=EventActorType.ADMIN if membership.role == OrganizationRole.ADMIN else EventActorType.SUPPORT_AGENT,
+            # Admins are recorded as support staff; actor_user_id identifies exactly who acted
+            actor_type=EventActorType.SUPPORT_AGENT,
             actor_user_id=membership.user_id,
             details={
                 "from": str(ticket.assigned_to_user_id) if ticket.assigned_to_user_id else None,
