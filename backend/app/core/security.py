@@ -3,6 +3,7 @@ from app.core.config import settings
 from uuid import UUID
 import jwt
 from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
 
 password_hash = PasswordHash.recommended()
 
@@ -12,7 +13,11 @@ def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    return password_hash.verify(password, hashed_password)
+    try:
+        return password_hash.verify(password, hashed_password)
+    except UnknownHashError:
+        # Not a real hash (e.g. seeded users without a usable password): never matches
+        return False
 
 def create_access_token(user_id : UUID) -> str:
     now = datetime.now(tz=timezone.utc)

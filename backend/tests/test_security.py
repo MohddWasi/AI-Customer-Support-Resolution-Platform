@@ -1,3 +1,4 @@
+from app.core.config import settings
 from app.core.security import (
     hash_password,
     verify_password,
@@ -28,9 +29,13 @@ def test_access_token_cntains_user_id():
 def test_expired_token_is_rejected():
     token = jwt.encode(
         {"sub": str(uuid4()), "exp": 1},
-        __import__("app.core.security", fromlist=["settings"]).settings.JWT_SECRET_KEY,
+        settings.JWT_SECRET_KEY,
         algorithm="HS256",
     )
     
     with pytest.raises(jwt.ExpiredSignatureError):
         decode_access_token(token)
+
+def test_unrecognized_hash_never_matches():
+    # e.g. seeded users, whose placeholder is not a real hash
+    assert verify_password("anything", "!seed-user-no-login") is False

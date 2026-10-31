@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager
 from app.db.session import engine
 from app.core.redis import redis_client
 from app.api.auth import router as auth_router
+from app.api.organizations import router as organizations_router
+from app.api.tickets import router as tickets_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,3 +35,5 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(organizations_router)
+app.include_router(tickets_router)
