@@ -1,6 +1,10 @@
 # Local development tracker
 temporary.md
 
+# Local context docs for AI assistants
+APIs-branch-implementation.md
+DATABASE-ARCHITECTURE.md
+
 # Environment
 .env
 .env.*

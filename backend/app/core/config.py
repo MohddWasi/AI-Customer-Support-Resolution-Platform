@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # HS256 needs at least 32 bytes; a missing or weak key stops the app at startup
     JWT_SECRET_KEY: str = Field(min_length=32)
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 20
+    OPENAI_API_KEY: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
