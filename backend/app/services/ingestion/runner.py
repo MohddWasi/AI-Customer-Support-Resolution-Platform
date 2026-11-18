@@ -13,7 +13,7 @@ from app.models.knowledge_source import KnowledgeSource
 from app.models.organization import Organization
 from app.services.ingestion.pipeline import ingest_cleaned_document, ingest_url
 
-ORGANIZATION_NAME = "Acme Software"
+ORGANIZATION_NAME = "Acronis"
 
 GITLAB_SOURCE_NAME = "GitLab Documentation"
 POLICY_SOURCE_NAME = "Support Policies"
