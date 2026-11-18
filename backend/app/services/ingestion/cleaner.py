@@ -1,6 +1,6 @@
 import re
+
 from bs4 import BeautifulSoup
-from sqlalchemy import true
 
 def clean_html(html: str) -> tuple[str, str]:
      """
@@ -46,7 +46,7 @@ def clean_html(html: str) -> tuple[str, str]:
      content = main_content.get_text(separator="\n")
 
      # normalize whitespace
-     lines = [ re.sub(r"\s", " ", line).strip()
+     lines = [ re.sub(r"\s+", " ", line).strip()
                 for line in content.splitlines()]
 
      # remove empty lines

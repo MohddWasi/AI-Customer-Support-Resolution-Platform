@@ -35,6 +35,7 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
       JWT_SECRET_KEY: ci-test-only-secret-key-not-for-production-0123456789
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 20
+      OPENAI_API_KEY: ci-placeholder-not-a-real-key
       ENVIRONMENT: test
 
     steps:
